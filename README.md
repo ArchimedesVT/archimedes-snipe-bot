@@ -5,20 +5,20 @@ Official Discord Bot Documentation
 Updated August 2025
 
 
-1. Overview
+## Overview
 About
-SnipeBot counts and sorts “snipes” (images with tagged users). This is achieved by reading the channel history of the snipe channel from the most recent message up to a hard-coded start date. This method is preferred over live leaderboard updates to account for message edits and deleted messages easily.
+- SnipeBot counts and sorts “snipes” (images with tagged users). This is achieved by reading the channel history of the snipe channel from the most recent message up to a hard-coded start date. This method is preferred over live leaderboard updates to account for message edits and deleted messages easily.
 
 Contact Info
-SnipeBot is developed and maintained by the Archimedes developer team. Ping the developer role on Discord for immediate support.
+- SnipeBot is developed and maintained by the Archimedes developer team. Ping the developer role on Discord for immediate support.
 
-2. Commands
+## Commands
 /help
-Provides an overview of sniping and links this document.
+- Provides an overview of sniping and links this document.
 /rules
-Responds with sniping rules.
+- Responds with sniping rules.
 /leaderboard <filter>
-Generates and responds with the current leaderboard.
+- Generates and responds with the current leaderboard.
 Filters:
 sniper (or no filter): Displays the top ten members with the most snipes.
 sniped: Displays the top ten members who have been sniped the most.
@@ -28,11 +28,11 @@ teams: Displays the top teams, including leadership and alumni, sorted by most s
 duos: Displays the top ten member pairs with the most snipes of each other.
 
 /cache
-Generates and stores the leaderboard to memory from the set start date. When /leaderboard is used, it will update the leaderboard stored in memory. The purpose of this command is to speed up leaderboard generation.
-If prompted with a memory error, use this command.
-If the output of /leaderboard is slow, use this command.
+- Generates and stores the leaderboard to memory from the set start date. When /leaderboard is used, it will update the leaderboard stored in memory. The purpose of this command is to speed up leaderboard generation.
+- If prompted with a memory error, use this command.
+- If the output of /leaderboard is slow, use this command.
 
-3. Developer Guide
+## Developer Guide
 Source Code
 GitHub: Please commit all changes to the SnipeBot public repository.
 To update the bot with new code:
