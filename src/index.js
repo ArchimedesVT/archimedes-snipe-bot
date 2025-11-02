@@ -4,7 +4,7 @@ const { Client, IntentsBitField, ActivityType, EmbedBuilder } = require('discord
 // inputs
 const channelId = '1169317299237433475'; // snipe channel ID
 const guildId = '1099834703130935296'; // archimedes server ID
-const startDate = new Date('2025-04-28T12:30:00-05:00'); // -5:00 for EST, start from this date
+const startDate = new Date('2025-09-27T01:00:00-05:00'); // -5:00 for EST, start from this date
 
 // initialize point tracking object
 const userPoints = {};
@@ -48,8 +48,9 @@ async function getUserTeam(userID, guild) {
     }
 
     // define roles for each team
-    const leadershipRoles = ['President', 'Vice President', 'Secretary', 'Treasurer', 'Publicity', 'Recruiter', 'Advisor'];
+    const leadershipRoles = ['Executive Board', 'Officer', 'Advisor', 'Recruiter/Interviewer'];
     const teamRoles = ['Astra', 'Infinitum', 'Juvo', 'Terra'];
+    const alumniRoles = ['E-board Alumni', 'Astra Alumni', "Infinitum Alumni", "Juvo Alumni", "Terra Alumni"];
 
     // check for leadership roles first
     const hasLeadershipRole = member.roles.cache.some(role => leadershipRoles.includes(role.name));
@@ -57,7 +58,13 @@ async function getUserTeam(userID, guild) {
       return 'Leadership';
     }
 
-    // if not leadership, check for other team roles
+    // check for alumni roles second
+    const hasAlumniRole = member.roles.cache.some(role => alumniRoles.includes(role.name));
+    if (hasAlumniRole) {
+      return 'Alumni';
+    }
+
+    // else check for other team roles
     const userRole = member.roles.cache.find(role => teamRoles.includes(role.name));
     return userRole ? userRole.name : null;
 
@@ -105,17 +112,23 @@ async function getLeaderboard(stopDate, timeout) {
         return;
       }
 
-      const hasImage = msg.attachments.some(attachment =>
-        attachment.contentType && attachment.contentType.startsWith('image')
-      ) || msg.embeds.some(embed => embed.image || embed.thumbnail);
+      const hasExplicitMention = [...msg.mentions.users.values()].some(user =>
+        msg.content.includes(`<@${user.id}>`) || msg.content.includes(`<@!${user.id}>`)
+      );
 
-      if (hasImage && msg.mentions.users.size > 0) {
+      const hasImage = msg.attachments.some(attachment =>
+        attachment.contentType && attachment.contentType.startsWith('image') && attachment.contentType !== 'image/gif'
+      );
+
+      if (hasImage && hasExplicitMention) {
         try {
           // check if member exists
           const author = await msg.guild.members.fetch(msg.author.id);
 
           // add points to user
-          incrementPoints(msg.author.id, 'sniper');
+          msg.mentions.users.forEach(() => {
+            incrementPoints(msg.author.id, 'sniper');
+          });
 
           // add points to team
           const authorTeam = await getUserTeam(msg.author.id, msg.guild);
@@ -190,7 +203,7 @@ const client = new Client({
 })
 
 // activate bot
-client.on('ready', (c) => {
+client.on('clientReady', (c) => {
   console.log(`🟢 ${c.user.tag} online.`)
 
   client.user.setActivity({
@@ -226,7 +239,7 @@ client.on('interactionCreate', async (interaction) => {
   
   // check if the leaderboard cache is empty
   if (Object.keys(leaderboardMemory.userPoints).length === 0) {
-    return await interaction.editReply("💤 Leaderboards will return in the Fall");
+    return await interaction.editReply("Memory is empty!");
   }
 
   const sortType = interaction.options.get('filter')?.value ?? 'sniper';
@@ -341,10 +354,12 @@ client.on('interactionCreate', async (interaction) => {
     for (const [index, { sniperId, snipedId, count }] of sortedUsers.entries()) {
       const sniper = await guild.members.fetch(sniperId);
       const sniped = await guild.members.fetch(snipedId);
-      const sniperShortName = sniper.displayName.split(' ')[0];
-      const snipedShortName = sniped.displayName.split(' ')[0];
+      let sniperDispName = sniper.displayName;
+      let snipedDispName = sniped.displayName;
+      if (sniperDispName.length > 15) sniperDispName = sniperDispName.slice(0, 13) + '...';
+      if (snipedDispName.length > 15) snipedDispName = snipedDispName.slice(0, 13) + '...';
       const medal = medals[index] || `(${index+1})`;
-      leaderboard += `${medal} ${sniperShortName} ⇄ ${snipedShortName} (${count}) \n`;
+      leaderboard += `${medal} ${sniperDispName} ⇄ ${snipedDispName} (${count}) \n`;
     };
 
     // create the EmbedBuilder
@@ -357,8 +372,9 @@ client.on('interactionCreate', async (interaction) => {
     for (const [index, [userId, points]] of sortedUsers.entries()) {
       const user = await guild.members.fetch(userId);
       const medal = medals[index] || `(${index+1})`;
-      const shortName = user.displayName.split(' ')[0];
-      leaderboard += `${medal} ${shortName} — ${points.sniper} • ${points.sniped} • ${calculateKD(points.sniper, points.sniped)}\n`;
+      let dispName = user.displayName;
+      if (dispName.length > 17) dispName = dispName.slice(0, 15) + '...';
+      leaderboard += `${medal} ${dispName} — ${points.sniper} • ${points.sniped} • ${calculateKD(points.sniper, points.sniped)}\n`;
     };
 
     // create the EmbedBuilder
@@ -383,35 +399,14 @@ client.on('messageCreate', async (message) => {
     attachment.contentType && attachment.contentType.startsWith('image')
   ) || message.embeds.some(embed => embed.image || embed.thumbnail);
 
-  // check if there are no tagged users
-  const hasNoTaggedUser = message.mentions.users.size === 0;
+  // check if there are tagged users
+  const hasExplicitMention = [...message.mentions.users.values()].some(user =>
+    message.content.includes(`<@${user.id}>`) || message.content.includes(`<@!${user.id}>`)
+  );
 
   // if there is an image and no tagged user, react
-  if (hasImage && hasNoTaggedUser) {
+  if (hasImage && !hasExplicitMention) {
     message.react('⚠️');
-  }
-});
-
-// message forwarding
-const sourceChannelId = '1306105955854975016'; // input channel
-const targetChannelId = channelId; // output channel
-client.on('messageCreate', async (message) => {
-  if (message.author.bot) return;
-  if (message.channel.id !== sourceChannelId) return;
-
-  const targetChannel = await client.channels.fetch(targetChannelId);
-  if (!targetChannel) return;
-
-  // forward the message content, if any
-  if (message.content) {
-    targetChannel.send(message.content);
-  }
-
-  // forward attachments (images or other files), if any
-  if (message.attachments.size > 0) {
-    message.attachments.forEach((attachment) => {
-      targetChannel.send({ files: [attachment.url] });
-    });
   }
 });
 
