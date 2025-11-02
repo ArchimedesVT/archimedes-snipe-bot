@@ -19,13 +19,13 @@ Contact Info
 - Responds with sniping rules.
 /leaderboard <filter>
 - Generates and responds with the current leaderboard.
-Filters:
-sniper (or no filter): Displays the top ten members with the most snipes.
-sniped: Displays the top ten members who have been sniped the most.
-all: Displays entire leaderboard, sorted by most snipes.
-kd: Displays the top ten members with the highest kill/death ratio. An undefeated status is denoted by “UD”.
-teams: Displays the top teams, including leadership and alumni, sorted by most snipes. This count includes friendly-fire snipes. 
-duos: Displays the top ten member pairs with the most snipes of each other.
+#### Filters:
+- sniper (or no filter): Displays the top ten members with the most snipes.
+- sniped: Displays the top ten members who have been sniped the most.
+- all: Displays entire leaderboard, sorted by most snipes.
+- kd: Displays the top ten members with the highest kill/death ratio. An undefeated status is denoted by “UD”.
+- teams: Displays the top teams, including leadership and alumni, sorted by most snipes. This count includes friendly-fire snipes. 
+- duos: Displays the top ten member pairs with the most snipes of each other.
 
 /cache
 - Generates and stores the leaderboard to memory from the set start date. When /leaderboard is used, it will update the leaderboard stored in memory. The purpose of this command is to speed up leaderboard generation.
