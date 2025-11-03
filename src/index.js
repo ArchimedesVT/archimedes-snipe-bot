@@ -11,6 +11,12 @@ const userPoints = {};
 const teamPoints = { Astra: { sniper: 0, sniped: 0 }, Infinitum: { sniper: 0, sniped: 0 }, Juvo: { sniper: 0, sniped: 0 }, Terra: { sniper: 0, sniped: 0 }, Leadership: { sniper: 0, sniped: 0 } };
 const snipedPairs = {};
 
+// initialize manual adjustment tracking
+const manualAdjustments = {
+  userPoints: {},
+  teamPoints: {}
+};
+
 // initialize leaderboard objects
 let leaderboardMemory = {
   userPoints: {},
@@ -35,6 +41,26 @@ function calculateKD(sniper, sniped) {
     kd = sniper/sniped;
     return kd.toFixed(2);
   }
+}
+
+// function to apply manual adjustments to calculated points
+function applyManualAdjustments() {
+  // Apply user adjustments
+  Object.keys(manualAdjustments.userPoints).forEach(userId => {
+    if (!userPoints[userId]) {
+      userPoints[userId] = { sniper: 0, sniped: 0 };
+    }
+    userPoints[userId].sniper += manualAdjustments.userPoints[userId].sniper || 0;
+    userPoints[userId].sniped += manualAdjustments.userPoints[userId].sniped || 0;
+  });
+
+  // Apply team adjustments
+  Object.keys(manualAdjustments.teamPoints).forEach(team => {
+    if (teamPoints[team]) {
+      teamPoints[team].sniper += manualAdjustments.teamPoints[team].sniper || 0;
+      teamPoints[team].sniped += manualAdjustments.teamPoints[team].sniped || 0;
+    }
+  });
 }
 
 // function to get team
@@ -183,6 +209,9 @@ async function getLeaderboard(stopDate, timeout) {
     await new Promise(resolve => setTimeout(resolve, timeout));
   }
 
+  // Apply manual adjustments before caching
+  applyManualAdjustments();
+
   // cache the results
   getLeaderboard.userPoints = JSON.parse(JSON.stringify(userPoints));
   getLeaderboard.teamPoints = JSON.parse(JSON.stringify(teamPoints));
@@ -190,6 +219,7 @@ async function getLeaderboard(stopDate, timeout) {
   getLeaderboard.cacheDate = new Date();
 
   return getLeaderboard
+
 }
 
 // settings to include
@@ -416,6 +446,71 @@ client.on('interactionCreate', async (interaction) => {
   await interaction.deferReply();
   leaderboardMemory = await getLeaderboard(startDate, 10000);
   await interaction.editReply(`✅ Leaderboard cached at ${leaderboardMemory.cacheDate.toLocaleString()} UTC`);
+});
+
+// addpoints command
+client.on('interactionCreate', async (interaction) => {
+  if (!interaction.isChatInputCommand() || interaction.commandName !== 'addpoints') return;
+  await interaction.deferReply();
+
+  const usersString = interaction.options.get('users')?.value;
+  const pointType = interaction.options.get('type')?.value;
+
+  // Extract user IDs from mentions in the string
+  const userIdMatches = usersString.matchAll(/<@!?(\d+)>/g);
+  const userIds = [...userIdMatches].map(match => match[1]);
+
+  if (userIds.length === 0) {
+    return await interaction.editReply("❌ No valid user mentions found. Please use @ to tag users.");
+  }
+
+  const guild = await client.guilds.fetch(guildId);
+  const addedUsers = [];
+  const failedUsers = [];
+
+  // Add points to each mentioned user
+  for (const userId of userIds) {
+    try {
+      // Verify the user exists in the server
+      const member = await guild.members.fetch(userId);
+      
+      // Add to manual adjustments
+      if (!manualAdjustments.userPoints[userId]) {
+        manualAdjustments.userPoints[userId] = { sniper: 0, sniped: 0 };
+      }
+      manualAdjustments.userPoints[userId][pointType]++;
+
+      // Add to team adjustments
+      const userTeam = await getUserTeam(userId, guild);
+      if (userTeam && teamPoints[userTeam]) {
+        if (!manualAdjustments.teamPoints[userTeam]) {
+          manualAdjustments.teamPoints[userTeam] = { sniper: 0, sniped: 0 };
+        }
+        manualAdjustments.teamPoints[userTeam][pointType]++;
+      }
+
+      addedUsers.push(member.displayName);
+    } catch (error) {
+      failedUsers.push(`<@${userId}>`);
+      console.error(`Error adding points to user ${userId}:`, error);
+    }
+  }
+
+  // Recalculate cache to include new adjustments
+  if (addedUsers.length > 0) {
+    leaderboardMemory = await getLeaderboard(startDate, 10000);
+  }
+
+  // Build response message
+  let responseMsg = '';
+  if (addedUsers.length > 0) {
+    responseMsg += `✅ Added 1 **${pointType}** point to: ${addedUsers.join(', ')}\nLeaderboard has been recalculated.`;
+  }
+  if (failedUsers.length > 0) {
+    responseMsg += `\n❌ Failed to add points to: ${failedUsers.join(', ')}`;
+  }
+
+  await interaction.editReply(responseMsg || "❌ No points were added.");
 });
 
 // enable bot by entering nodemon in the terminal
