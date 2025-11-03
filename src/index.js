@@ -1,10 +1,15 @@
 require('dotenv').config();
 const { Client, IntentsBitField, ActivityType, EmbedBuilder } = require('discord.js');
+const fs = require('fs').promises;
+const path = require('path');
 
 // inputs
 const channelId = '1169317299237433475'; // snipe channel ID
 const guildId = '1099834703130935296'; // archimedes server ID
 const startDate = new Date('2025-09-27T01:00:00-05:00'); // -5:00 for EST, start from this date
+
+// Path to store manual adjustments
+const adjustmentsFilePath = path.join(__dirname, 'manual-adjustments.json');
 
 // initialize point tracking object
 const userPoints = {};
@@ -12,7 +17,7 @@ const teamPoints = { Astra: { sniper: 0, sniped: 0 }, Infinitum: { sniper: 0, sn
 const snipedPairs = {};
 
 // initialize manual adjustment tracking
-const manualAdjustments = {
+let manualAdjustments = {
   userPoints: {},
   teamPoints: {}
 };
@@ -25,21 +30,28 @@ let leaderboardMemory = {
   cacheDate: null
 };
 
-// function to increment points
-function incrementPoints(userId, type) {
-  if (!userPoints[userId]) {
-    userPoints[userId] = { sniper: 0, sniped: 0 };
+// function to load manual adjustments from file
+async function loadManualAdjustments() {
+  try {
+    const data = await fs.readFile(adjustmentsFilePath, 'utf8');
+    manualAdjustments = JSON.parse(data);
+    console.log('✅ Manual adjustments loaded from file');
+  } catch (error) {
+    if (error.code === 'ENOENT') {
+      console.log('📝 No manual adjustments file found, starting fresh');
+    } else {
+      console.error('Error loading manual adjustments:', error);
+    }
   }
-  userPoints[userId][type]++;
 }
 
-// function to calculate k/d ratio
-function calculateKD(sniper, sniped) {
-  if (sniped === 0) {
-    return 'UD'
-  } else {
-    kd = sniper/sniped;
-    return kd.toFixed(2);
+// function to save manual adjustments to file
+async function saveManualAdjustments() {
+  try {
+    await fs.writeFile(adjustmentsFilePath, JSON.stringify(manualAdjustments, null, 2));
+    console.log('✅ Manual adjustments saved to file');
+  } catch (error) {
+    console.error('Error saving manual adjustments:', error);
   }
 }
 
@@ -61,6 +73,24 @@ function applyManualAdjustments() {
       teamPoints[team].sniped += manualAdjustments.teamPoints[team].sniped || 0;
     }
   });
+}
+
+// function to increment points
+function incrementPoints(userId, type) {
+  if (!userPoints[userId]) {
+    userPoints[userId] = { sniper: 0, sniped: 0 };
+  }
+  userPoints[userId][type]++;
+}
+
+// function to calculate k/d ratio
+function calculateKD(sniper, sniped) {
+  if (sniped === 0) {
+    return 'UD'
+  } else {
+    kd = sniper/sniped;
+    return kd.toFixed(2);
+  }
 }
 
 // function to get team
@@ -219,7 +249,6 @@ async function getLeaderboard(stopDate, timeout) {
   getLeaderboard.cacheDate = new Date();
 
   return getLeaderboard
-
 }
 
 // settings to include
@@ -233,8 +262,11 @@ const client = new Client({
 })
 
 // activate bot
-client.on('clientReady', (c) => {
+client.on('clientReady', async (c) => {
   console.log(`🟢 ${c.user.tag} online.`)
+
+  // Load manual adjustments on startup
+  await loadManualAdjustments();
 
   client.user.setActivity({
     name: '📷 Always watching',
@@ -496,8 +528,10 @@ client.on('interactionCreate', async (interaction) => {
     }
   }
 
-  // Recalculate cache to include new adjustments
+  // Save adjustments to file
   if (addedUsers.length > 0) {
+    await saveManualAdjustments();
+    // Recalculate cache to include new adjustments
     leaderboardMemory = await getLeaderboard(startDate, 10000);
   }
 

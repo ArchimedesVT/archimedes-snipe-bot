@@ -3,34 +3,6 @@ const { REST, Routes, ApplicationCommandOptionType } = require('discord.js');
 
 const commands = [
   {
-    name: 'addpoints',
-    description: 'Manually add a snipe point to one or more users.',
-    options: [
-      {
-        name: 'users',
-        description: 'Tag the users who should receive points (separate multiple with spaces)',
-        type: ApplicationCommandOptionType.String,
-        required: true,
-      },
-      {
-        name: 'type',
-        description: 'Type of point to add',
-        type: ApplicationCommandOptionType.String,
-        required: true,
-        choices: [
-          {
-            name: 'sniper',
-            value: 'sniper',
-          },
-          {
-            name: 'sniped',
-            value: 'sniped',
-          },
-        ]
-      }
-    ],
-  },
-  {
     name: 'help',
     description: 'Get help on sniping and how this bot works.',
   },
@@ -78,6 +50,34 @@ const commands = [
   {
     name: 'cache',
     description: 'Clear and restore memory.',
+  },
+  {
+    name: 'addpoints',
+    description: 'Manually add a snipe point to one or more users.',
+    options: [
+      {
+        name: 'users',
+        description: 'Tag the users who should receive points (separate multiple with spaces)',
+        type: ApplicationCommandOptionType.String,
+        required: true,
+      },
+      {
+        name: 'type',
+        description: 'Type of point to add',
+        type: ApplicationCommandOptionType.String,
+        required: true,
+        choices: [
+          {
+            name: 'sniper',
+            value: 'sniper',
+          },
+          {
+            name: 'sniped',
+            value: 'sniped',
+          },
+        ]
+      }
+    ],
   },
 ];
 
