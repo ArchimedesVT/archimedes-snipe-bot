@@ -50,3 +50,32 @@ SnipeBot uses discord.js, a Node.js module for Discord bots. Modifying code is e
 Updating bot code is reserved for the developer committee only. To make a request, ping a developer. If you are part of this committee and would like to modify the code, follow these steps to gain the necessary access:
 Ask a current developer to add you to the Archimedes Systems Discord Developer Team. When your request is approved, you will be able to access bot settings at discord.com/developers/applications 
 For current cred, ask the webmaster.
+
+
+## Updating Commands
+
+To update commands, ensure you have the following .env in the same directionry as register-commands (src):
+
+```.env
+TOKEN=
+CLIENT_ID=
+GUILD_ID=
+```
+
+Application is client id in discord.dev.
+Token is given by the cybrancee server in the .env folder.
+Guild id is already given in the index.js file. 
+
+Then to push the new commands to the server, run:
+
+```bash
+node register-commands.js
+```
+
+Ensure you are in the current directory:
+
+```bash
+pwd
+```
+
+Source (src) should be the directory you are in. 
