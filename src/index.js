@@ -531,14 +531,12 @@ client.on('interactionCreate', async (interaction) => {
   // Save adjustments to file
   if (addedUsers.length > 0) {
     await saveManualAdjustments();
-    // Recalculate cache to include new adjustments
-    leaderboardMemory = await getLeaderboard(startDate, 10000);
   }
 
   // Build response message
   let responseMsg = '';
   if (addedUsers.length > 0) {
-    responseMsg += `✅ Added 1 **${pointType}** point to: ${addedUsers.join(', ')}\nLeaderboard has been recalculated.`;
+    responseMsg += `✅ Added 1 **${pointType}** point to: ${addedUsers.join(', ')}\n\n⚠️ Run \`/cache\` to update the leaderboard with these changes.`;
   }
   if (failedUsers.length > 0) {
     responseMsg += `\n❌ Failed to add points to: ${failedUsers.join(', ')}`;
