@@ -240,6 +240,7 @@ async function getLeaderboard(stopDate, timeout) {
   }
 
   // Apply manual adjustments before caching
+  // pulls the current list of manual adjustments and adds them in 
   applyManualAdjustments();
 
   // cache the results
@@ -266,6 +267,7 @@ client.on('clientReady', async (c) => {
   console.log(`🟢 ${c.user.tag} online.`)
 
   // Load manual adjustments on startup
+  // writes them to variable, which then adds them in 
   await loadManualAdjustments();
 
   client.user.setActivity({
